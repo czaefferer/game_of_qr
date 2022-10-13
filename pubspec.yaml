@@ -1,0 +1,35 @@
+name: game_of_qr
+description: A new Flutter project.
+
+publish_to: 'none'
+version: 1.0.0+1
+platforms:
+  ? ios
+  ? android
+
+environment:
+  sdk: ">=2.17.5 <3.0.0"
+
+dependencies:
+  camera: ^0.10.0+3
+  collection: ^1.16.0
+  cupertino_icons: ^1.0.2
+  dynamic_color: ^1.4.0
+  flutter:
+    sdk: flutter
+  google_mlkit_barcode_scanning: ^0.4.0
+  native_device_orientation: ^1.1.4
+  qr: ^3.0.1
+  shared_preferences: ^2.0.15
+  super_tooltip: ^1.0.1
+
+dev_dependencies:
+  flutter_lints: ^2.0.1
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/java.png
+    - assets/wood.png
