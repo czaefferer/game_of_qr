@@ -1,4 +1,4 @@
-package com.example.game_of_qr
+package de.uniteplus.gameofqr
 
 import io.flutter.embedding.android.FlutterActivity
 

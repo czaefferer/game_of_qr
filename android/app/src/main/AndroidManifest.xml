@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.game_of_qr">
+    package="de.uniteplus.gameofqr">
    <application
         android:label="game_of_qr"
         android:name="${applicationName}"
