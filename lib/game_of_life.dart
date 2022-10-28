@@ -167,6 +167,7 @@ class _GameOfLifeState extends State<GameOfLife> {
                   primary: false,
                   scrollDirection: Axis.vertical,
                   crossAxisCount: moduleCount,
+                  physics: const NeverScrollableScrollPhysics(),
                   children: data
                       .mapIndexed(
                         (x, row) => row.mapIndexed(

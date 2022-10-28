@@ -87,7 +87,11 @@ class _TestScanState extends State<TestScan> {
     try {
       final List<Barcode> barcodes = await barcodeScanner.processImage(cameraImageToInputImage(image, rotationRequiredBySensor));
       if (barcodes.isNotEmpty && barcodes[0].cornerPoints != null && barcodes[0].cornerPoints!.length == 4 && barcodes[0].rawValue != null) {
-        foundQr = FoundQr(barcodes[0].cornerPoints!, barcodes[0].rawValue!, Size(image.height.toDouble(), image.width.toDouble()));
+        if (Platform.isIOS) {
+          foundQr = FoundQr(barcodes[0].cornerPoints!, barcodes[0].rawValue!, Size(image.width.toDouble(), image.height.toDouble()));
+        } else {
+          foundQr = FoundQr(barcodes[0].cornerPoints!, barcodes[0].rawValue!, Size(image.height.toDouble(), image.width.toDouble()));
+        }
       } else if (foundQr != null) {
         if (foundQr!.found.add(const Duration(seconds: 1)).isBefore(DateTime.now())) {
           // for one second no qr code has been found, remove previously found one

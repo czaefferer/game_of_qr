@@ -1,0 +1,12 @@
+app_identifier("de.uniteplus.gameofqr") # The bundle identifier of your app
+apple_id("cza@uniteplus.de") # Your Apple email address
+
+itc_team_id("318399") # App Store Connect Team ID
+team_id("2Q56637S95") # Developer Portal Team ID
+dev_portal_team_id("69a6de83-fbb6-47e3-e053-5b8c7c11a4d1") #
+team_name("Unite+ Consulting GmbH") # full name with spaces
+itc_provider("maxenceintegrationtechnologiesgmbh") # short name without spaces
+username("cza@uniteplus.de")
+
+# For more information about the Appfile, see:
+#     https://docs.fastlane.tools/advanced/#appfile
