@@ -1,194 +1,128 @@
 import 'dart:async';
-import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:game_of_qr/settings.dart';
-import 'package:qr/qr.dart';
 import 'package:collection/collection.dart';
-import 'package:native_device_orientation/native_device_orientation.dart';
+import 'package:flutter/material.dart';
+
+import 'package:game_of_qr/settings_store.dart';
 
 class GameOfLife extends StatefulWidget {
-  const GameOfLife({super.key, required String qrRawData}) : initialQrRawData = qrRawData;
-  final String initialQrRawData;
+  const GameOfLife({
+    required List<List<bool>> pixels,
+    required this.pixelsAxisCount,
+    super.key,
+  }) : initialPixels = pixels;
+
+  final List<List<bool>> initialPixels;
+  final int pixelsAxisCount;
+
   @override
   State<GameOfLife> createState() => _GameOfLifeState();
 }
 
 class _GameOfLifeState extends State<GameOfLife> {
-  late List<List<bool>> data;
-  late final int moduleCount;
-  late StreamSubscription<NativeDeviceOrientation> orientationListener;
-  bool lateVariablesInitialized = false;
+  late List<List<bool>> pixels;
+  late Timer nextAdvanceGameTimer;
 
-  NativeDeviceOrientation currentDeviceOrientation = NativeDeviceOrientation.portraitUp;
-  DateTime lastUpdateTime = DateTime.now();
-  int gameSpeed = 500;
   @override
   void initState() {
     super.initState();
-    scheduleMicrotask(asyncInit);
-  }
-
-  void asyncInit() async {
-    gameSpeed = await appConfigurationService.getValue<int>(AppConfigurationOptions.gameSpeed, 500);
-    await initQrData();
-    await initOrientationListener();
-    await updateDeviceOrientation();
-    setState(() {
-      lateVariablesInitialized = true;
-    });
-    SchedulerBinding.instance.scheduleFrameCallback(_tick);
-  }
-
-  Future<void> initOrientationListener() async {
-    orientationListener = NativeDeviceOrientationCommunicator().onOrientationChanged(useSensor: true).listen((NativeDeviceOrientation newDeviceOrientation) {
-      setState(() {
-        currentDeviceOrientation = newDeviceOrientation;
-      });
-    });
-  }
-
-  Future<void> initQrData() async {
-    var qrImage = QrImage(QrCode.fromData(data: widget.initialQrRawData, errorCorrectLevel: QrErrorCorrectLevel.Q));
-    moduleCount = qrImage.moduleCount;
-    data = List.generate(qrImage.moduleCount, (_) => List.generate(qrImage.moduleCount, (_) => false));
-    for (int x = 0; x < qrImage.moduleCount; x++) {
-      for (int y = 0; y < qrImage.moduleCount; y++) {
-        data[x][y] = qrImage.isDark(x, y);
-      }
-    }
+    pixels = widget.initialPixels;
+    nextAdvanceGameTimer = Timer(Duration(milliseconds: AppSettings.gameSpeed), advanceGame);
   }
 
   @override
   void dispose() {
-    orientationListener.cancel();
+    nextAdvanceGameTimer.cancel();
     super.dispose();
   }
 
-  Future<void> updateDeviceOrientation() async {
-    currentDeviceOrientation = await NativeDeviceOrientationCommunicator().orientation(useSensor: true);
-  }
-
-  void _tick(_) async {
-    if (lastUpdateTime.add(Duration(milliseconds: gameSpeed)).isAfter(DateTime.now())) {
-      if (mounted) {
-        SchedulerBinding.instance.scheduleFrameCallback(_tick);
-      }
-      return;
-    }
-    await updateDeviceOrientation();
-    advanceGame();
-    if (mounted) {
-      SchedulerBinding.instance.scheduleFrameCallback(_tick);
-      lastUpdateTime = DateTime.now();
-    }
-  }
-
-  void advanceGame() {
-    List<List<bool>> newData = List.generate(moduleCount, (_) => List.generate(moduleCount, (_) => false));
-    for (int x = 0; x < moduleCount; x++) {
-      for (int y = 0; y < moduleCount; y++) {
-        int aliveNeightborsCount = getAliveNeightborsCount(x, y);
-        bool newStatus = data[x][y];
-
-        if (data[x][y] && aliveNeightborsCount < 2) {
+  void advanceGame() async {
+    List<List<bool>> newPixels = List.generate(widget.pixelsAxisCount, (_) => List.generate(widget.pixelsAxisCount, (_) => false));
+    for (int x = 0; x < widget.pixelsAxisCount; x++) {
+      for (int y = 0; y < widget.pixelsAxisCount; y++) {
+        int livingNeightborsCount = getLivingNeightborsCount(x, y);
+        if (pixels[x][y] && livingNeightborsCount < 2) {
           // 1. Any live cell with fewer than two live neighbours dies, as if by underpopulation.
-          newStatus = false;
-        } else if (data[x][y] && (aliveNeightborsCount == 2 || aliveNeightborsCount == 3)) {
+          newPixels[x][y] = false;
+        } else if (pixels[x][y] && (livingNeightborsCount == 2 || livingNeightborsCount == 3)) {
           // 2. Any live cell with two or three live neighbours lives on to the next generation.
-          newStatus = true;
-        } else if (data[x][y] && aliveNeightborsCount > 3) {
+          newPixels[x][y] = true;
+        } else if (pixels[x][y] && livingNeightborsCount > 3) {
           // 3. Any live cell with more than three live neighbours dies, as if by overpopulation.
-          newStatus = false;
-        } else if (!data[x][y] && aliveNeightborsCount == 3) {
+          newPixels[x][y] = false;
+        } else if (!pixels[x][y] && livingNeightborsCount == 3) {
           // 4. Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
-          newStatus = true;
+          newPixels[x][y] = true;
         }
-        newData[x][y] = newStatus;
       }
     }
+
     if (mounted) {
       setState(() {
-        data = newData;
+        pixels = newPixels;
       });
     }
+
+    // schedule next execution
+    nextAdvanceGameTimer = Timer(Duration(milliseconds: AppSettings.gameSpeed), advanceGame);
   }
 
-  int getAliveNeightborsCount(int x, int y) {
-    return isCellAlive(x - 1, y - 1) +
-        isCellAlive(x, y - 1) +
-        isCellAlive(x + 1, y - 1) +
-        isCellAlive(x - 1, y) +
-        isCellAlive(x, y) +
-        isCellAlive(x + 1, y) +
-        isCellAlive(x - 1, y + 1) +
-        isCellAlive(x, y + 1) +
-        isCellAlive(x + 1, y + 1);
+  int getLivingNeightborsCount(int x, int y) {
+    return [
+      isCellAlive(x - 1, y - 1),
+      isCellAlive(x, y - 1),
+      isCellAlive(x + 1, y - 1),
+      isCellAlive(x - 1, y),
+      isCellAlive(x + 1, y),
+      isCellAlive(x - 1, y + 1),
+      isCellAlive(x, y + 1),
+      isCellAlive(x + 1, y + 1)
+    ].where((e) => e).length;
   }
 
-  int isCellAlive(int x, int y) {
-    if (x < 0 || x >= moduleCount || y < 0 || y >= moduleCount) {
-      return 0;
+  bool isCellAlive(int x, int y) {
+    if (x < 0 || x >= widget.pixelsAxisCount || y < 0 || y >= widget.pixelsAxisCount) {
+      return false;
     } else {
-      return data[x][y] ? 1 : 0;
-    }
-  }
-
-  double calculateRotationToBeApplied() {
-    switch (currentDeviceOrientation) {
-      case NativeDeviceOrientation.portraitDown:
-        return 180;
-
-      case NativeDeviceOrientation.landscapeLeft:
-        return 90;
-
-      case NativeDeviceOrientation.landscapeRight:
-        return 270;
-
-      case NativeDeviceOrientation.portraitUp:
-      default:
-        return 0;
+      return pixels[x][y];
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return !lateVariablesInitialized
-        ? Container(color: Colors.transparent)
-        : Transform.rotate(
-            angle: calculateRotationToBeApplied() * (math.pi / 180),
-            child: Container(
-              color: Colors.white,
-              child: Draggable<bool>(
-                data: true,
-                feedback: Container(),
-                child: GridView.count(
-                  primary: false,
-                  scrollDirection: Axis.vertical,
-                  crossAxisCount: moduleCount,
-                  children: data
-                      .mapIndexed(
-                        (x, row) => row.mapIndexed(
-                          (y, cell) => DragTarget(
-                            builder: (context, candidateItems, rejectedItems) {
-                              return Container(color: (cell) ? Colors.black : Colors.white);
-                            },
-                            onMove: (item) {
-                              if (!data[x][y]) {
-                                setState(() {
-                                  data[x][y] = true;
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                      )
-                      .expand((i) => i)
-                      .toList(),
+    // initializing this can be slow, because a lot of widgets might need to be created (depending on the axis-count). Using a custom painter might be better
+    return ColoredBox(
+      color: Colors.white,
+      child: Draggable<bool>(
+        data: true,
+        feedback: const SizedBox.shrink(),
+        child: GridView.count(
+          primary: false,
+          scrollDirection: Axis.vertical,
+          crossAxisCount: widget.pixelsAxisCount,
+          children: pixels
+              .mapIndexed(
+                (x, row) => row.mapIndexed(
+                  (y, cell) => DragTarget(
+                    builder: (_, __, ___) {
+                      return cell //
+                          ? const ColoredBox(color: Colors.black)
+                          : const SizedBox.shrink();
+                    },
+                    onMove: (_) {
+                      if (!pixels[x][y]) {
+                        setState(() {
+                          pixels[x][y] = true;
+                        });
+                      }
+                    },
+                  ),
                 ),
-              ),
-            ),
-          );
+              )
+              .expand((i) => i)
+              .toList(),
+        ),
+      ),
+    );
   }
 }
