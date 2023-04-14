@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -114,7 +115,11 @@ class _MainGameState extends State<MainGame> {
           nextQr = previousQr..updateCornerPoints(barcodes[0].cornerPoints!);
         } else {
           // otherwise create new QR code information
-          nextQr = QRInformation(barcodes[0].cornerPoints!, barcodes[0].rawValue!, Size(image.height.toDouble(), image.width.toDouble()));
+          if (Platform.isIOS) {
+            nextQr = QRInformation(barcodes[0].cornerPoints!, barcodes[0].rawValue!, Size(image.width.toDouble(), image.height.toDouble()));
+          } else {
+            nextQr = QRInformation(barcodes[0].cornerPoints!, barcodes[0].rawValue!, Size(image.height.toDouble(), image.width.toDouble()));
+          }
         }
         // no QR code was found, check if one was previously found that is less than 1s old
       } else if (previousQr != null && previousQr.lastUpdate.add(const Duration(seconds: 1)).isAfter(DateTime.now())) {

@@ -100,6 +100,7 @@ class _GameOfLifeState extends State<GameOfLife> {
           primary: false,
           scrollDirection: Axis.vertical,
           crossAxisCount: widget.pixelsAxisCount,
+          physics: const NeverScrollableScrollPhysics(),
           children: pixels
               .mapIndexed(
                 (x, row) => row.mapIndexed(
