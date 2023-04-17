@@ -47,5 +47,7 @@
 	<string>Zugriff auf die Kamera wird benötigt um QR-Codes scannen zu können</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
 </dict>
 </plist>
