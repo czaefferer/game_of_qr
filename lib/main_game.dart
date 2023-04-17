@@ -67,12 +67,12 @@ class _MainGameState extends State<MainGame> {
       cameras[0],
       AppSettings.resultion,
       enableAudio: false,
-    )..initialize().then((_) {
+    )..initialize().then((_) async {
         if (!mounted) {
           return;
         }
-        cameraController!.lockCaptureOrientation(DeviceOrientation.portraitUp);
-        cameraController!.startImageStream(analyzeImageFromStream);
+        await cameraController!.lockCaptureOrientation(DeviceOrientation.portraitUp);
+        return cameraController!.startImageStream(analyzeImageFromStream);
       });
   }
 
@@ -115,11 +115,15 @@ class _MainGameState extends State<MainGame> {
           nextQr = previousQr..updateCornerPoints(barcodes[0].cornerPoints!);
         } else {
           // otherwise create new QR code information
-          if (Platform.isIOS) {
-            nextQr = QRInformation(barcodes[0].cornerPoints!, barcodes[0].rawValue!, Size(image.width.toDouble(), image.height.toDouble()));
-          } else {
-            nextQr = QRInformation(barcodes[0].cornerPoints!, barcodes[0].rawValue!, Size(image.height.toDouble(), image.width.toDouble()));
-          }
+          nextQr = QRInformation(
+            barcodes[0].cornerPoints!,
+            barcodes[0].rawValue!,
+            // Android streams in landscape mode, iOS in portrait. Since camera is locked to portrait mode, assume the smaller value is width and the larger value is height
+            Size(
+              math.min(image.width, image.height).toDouble(),
+              math.max(image.width, image.height).toDouble(),
+            ),
+          );
         }
         // no QR code was found, check if one was previously found that is less than 1s old
       } else if (previousQr != null && previousQr.lastUpdate.add(const Duration(seconds: 1)).isAfter(DateTime.now())) {
