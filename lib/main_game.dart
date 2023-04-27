@@ -69,7 +69,7 @@ class _MainGameState extends State<MainGame> {
 
     cameraController = CameraController(
       cameras[0],
-      AppSettings.resultion,
+      AppSettings.resolution,
       enableAudio: false,
     )..initialize().then((_) async {
         if (!mounted) {
@@ -98,7 +98,7 @@ class _MainGameState extends State<MainGame> {
             ||
             !mounted // ... widget is not mounted anymore
             ||
-            lastAnalyzationCompleted.add(Duration(milliseconds: AppSettings.delay)).isAfter(DateTime.now()) // ... last anayzation was less than configured delay ago
+            lastAnalyzationCompleted.add(Duration(milliseconds: AppSettings.delay)).isAfter(DateTime.now()) // ... last analyzation was less than configured delay ago
             ||
             (!AppSettings.arEnabled && previousQr != null) // ... not in AR mode and a QR code is already displayed
         ) {

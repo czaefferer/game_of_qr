@@ -41,7 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       AppSettings.resolution = AppSettings.intToResolutionPreset(value.round());
                     });
                   },
-                  value: AppSettings.resolutionPresetToInt(AppSettings.resultion).toDouble(),
+                  value: AppSettings.resolutionPresetToInt(AppSettings.resolution).toDouble(),
                   min: 1,
                   max: 6,
                   divisions: 5,

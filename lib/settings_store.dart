@@ -88,7 +88,7 @@ class AppSettings extends Settings {
 
   // setting: resolution
   ResolutionPreset _resolution = Platform.isIOS ? ResolutionPreset.low : ResolutionPreset.high;
-  static ResolutionPreset get resultion => AppSettings.instance._resolution;
+  static ResolutionPreset get resolution => AppSettings.instance._resolution;
   static set resolution(ResolutionPreset resolution) {
     AppSettings.instance._resolution = resolution;
     AppSettings.instance._persist();
