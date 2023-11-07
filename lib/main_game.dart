@@ -6,18 +6,14 @@ You should have received a copy of the GNU General Public License along with Gam
 import 'dart:async';
 import 'dart:developer';
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
-import 'package:qr/qr.dart';
-
 import 'package:game_of_qr/game_of_life.dart';
 import 'package:game_of_qr/header.dart';
+import 'package:game_of_qr/qr_detection.dart';
+import 'package:game_of_qr/qr_information.dart';
 import 'package:game_of_qr/settings_store.dart';
-import 'package:game_of_qr/util.dart';
 
 class MainGame extends StatefulWidget {
   const MainGame({super.key});
@@ -30,122 +26,42 @@ class _MainGameState extends State<MainGame> {
   /// async initialization future for build() to wait for
   late final Future<void> initialization;
 
-  /// camera controller once it is initialized (if a camera is found)
-  CameraController? cameraController;
-
-  /// rotation of the camera sensor, will be initialized with the camera-controller, but is usually 90°
-  int rotationRequiredBySensor = 90;
-
-  /// scanner to find QR codes in the camera stream
-  BarcodeScanner barcodeScanner = BarcodeScanner(formats: [BarcodeFormat.qrCode]);
-
-  /// mutex to prevent multiple images from being analyzed at the same time
-  bool analyzingImage = false;
-
-  /// last time an image-analysis was completed
-  DateTime lastAnalyzationCompleted = DateTime.now();
-
   /// information about the last found QR code
   QRInformation? foundQr;
 
-  /// cached device-pixel-ratio without subscribing to MediaQuery
-  double devicePixelRatio = MediaQueryData.fromWindow(window).devicePixelRatio;
+  /// cached device-pixel-ratio (initialized in didChangeDependencies)
+  double devicePixelRatio = 1;
+
+  /// class to detect QR codes in the camera stream
+  QrDetection qrDetection = QrDetection();
 
   @override
   void initState() {
     super.initState();
-    initialization = Future.microtask(() async {
-      await initVideo();
-    });
+    initialization = qrDetection.initialize(updateQr);
   }
 
-  Future<void> initVideo() async {
-    List<CameraDescription> cameras = await availableCameras();
-    if (cameras.isEmpty) {
-      throw Exception('No camera found');
-    }
-
-    rotationRequiredBySensor = cameras[0].sensorOrientation;
-
-    cameraController = CameraController(
-      cameras[0],
-      AppSettings.resolution,
-      enableAudio: false,
-    )..initialize().then((_) async {
-        if (!mounted) {
-          return;
-        }
-        await cameraController!.lockCaptureOrientation(DeviceOrientation.portraitUp);
-        return cameraController!.startImageStream(analyzeImageFromStream);
-      });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // get the pixel ration without subscribing to MediaQuery, as that should never change
+    devicePixelRatio = MediaQueryData.fromView(View.of(context)).devicePixelRatio;
   }
 
   @override
   void dispose() {
-    if (cameraController != null) {
-      cameraController!.dispose();
-    }
-    barcodeScanner.close();
+    qrDetection.dispose();
     super.dispose();
   }
 
-  // async so calls from the videostream can execute immediately instead of piling up and filling the RAM. A check inside will drop most frames.
-  void analyzeImageFromStream(CameraImage image) async {
-    QRInformation? previousQr = foundQr;
-    QRInformation? nextQr;
-    // frame can be dropped if ...
-    if (analyzingImage // ... already analyzing an image
-            ||
-            !mounted // ... widget is not mounted anymore
-            ||
-            lastAnalyzationCompleted.add(Duration(milliseconds: AppSettings.delay)).isAfter(DateTime.now()) // ... last analyzation was less than configured delay ago
-            ||
-            (!AppSettings.arEnabled && previousQr != null) // ... not in AR mode and a QR code is already displayed
-        ) {
-      return;
+  void updateQr(QRInformation? nextQr) {
+    if (!AppSettings.arEnabled && nextQr != null) {
+      qrDetection.paused = true;
     }
-
-    analyzingImage = true;
-
-    try {
-      // convert CameraImage to InputImage and find all codes in the image
-      final List<Barcode> barcodes = await barcodeScanner.processImage(cameraImageToInputImage(image, rotationRequiredBySensor));
-
-      // check if a QR code was found
-      if (barcodes.isNotEmpty && barcodes[0].cornerPoints != null && barcodes[0].cornerPoints!.length == 4 && barcodes[0].rawValue != null) {
-        // then check if found QR code is the same as the previously found one
-        if (previousQr != null && previousQr.rawDataHash == barcodes[0].rawValue.hashCode) {
-          // then only update the position
-          nextQr = previousQr..updateCornerPoints(barcodes[0].cornerPoints!);
-        } else {
-          // otherwise create new QR code information
-          nextQr = QRInformation(
-            barcodes[0].cornerPoints!,
-            barcodes[0].rawValue!,
-            // Android streams in landscape mode, iOS in portrait. Since camera is locked to portrait mode, assume the smaller value is width and the larger value is height
-            Size(
-              math.min(image.width, image.height).toDouble(),
-              math.max(image.width, image.height).toDouble(),
-            ),
-          );
-        }
-        // no QR code was found, check if one was previously found that is less than 1s old
-      } else if (previousQr != null && previousQr.lastUpdate.add(const Duration(seconds: 1)).isAfter(DateTime.now())) {
-        // then keep it alive
-        nextQr = previousQr;
-      }
-    } catch (e, s) {
-      log("error while analyzing image $e");
-      log(s.toString());
-    }
-
-    if (mounted) {
-      setState(() {
-        foundQr = nextQr;
-        analyzingImage = false;
-        lastAnalyzationCompleted = DateTime.now();
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      foundQr = nextQr;
+    });
   }
 
   @override
@@ -156,10 +72,11 @@ class _MainGameState extends State<MainGame> {
         future: initialization,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
+            log("error while initializing camera ${snapshot.error}\n${snapshot.stackTrace}");
             return Center(child: Text("Error: ${snapshot.error}"));
           }
 
-          if (snapshot.connectionState != ConnectionState.done || cameraController == null || !cameraController!.value.isInitialized) {
+          if (snapshot.connectionState != ConnectionState.done) {
             return const SizedBox.shrink();
           }
 
@@ -181,7 +98,7 @@ class _MainGameState extends State<MainGame> {
                 children: <Widget>[
                   // camera preview
                   Positioned.fill(
-                    child: CameraPreview(cameraController!),
+                    child: CameraPreview(qrDetection.cameraController!),
                   ),
                   // AR mode overlay
                   if (foundQr != null && AppSettings.arEnabled && transformationMatrix != null)
@@ -227,6 +144,7 @@ class _MainGameState extends State<MainGame> {
                           setState(() {
                             this.foundQr = null;
                           });
+                          qrDetection.paused = false;
                         },
                         child: Container(
                           width: 30,
@@ -267,64 +185,5 @@ class _MainGameState extends State<MainGame> {
     var targetLogicalPixels = targetDevicePixels / devicePixelRatio;
 
     return targetLogicalPixels;
-  }
-}
-
-class QRInformation {
-  List<math.Point<int>> cornerPoints;
-  DateTime lastUpdate = DateTime.now();
-  final Size imageSize;
-  final String rawData;
-  final int rawDataHash;
-  late final List<List<bool>> pixels;
-  late final int pixelsAxisCount;
-
-  QRInformation(this.cornerPoints, this.rawData, this.imageSize) : rawDataHash = rawData.hashCode {
-    // recreate a QR code based on the content of the found QR code
-    var qrImage = QrImage(QrCode.fromData(data: rawData, errorCorrectLevel: QrErrorCorrectLevel.Q));
-    // and then read out the dimension and the pixels
-    pixelsAxisCount = qrImage.moduleCount;
-    pixels = List.generate(qrImage.moduleCount, (_) => List.generate(qrImage.moduleCount, (_) => false));
-    for (int x = 0; x < qrImage.moduleCount; x++) {
-      for (int y = 0; y < qrImage.moduleCount; y++) {
-        pixels[x][y] = qrImage.isDark(x, y);
-      }
-    }
-  }
-  void updateCornerPoints(List<math.Point<int>> cornerPoints) {
-    this.cornerPoints = cornerPoints;
-    lastUpdate = DateTime.now();
-  }
-
-  // calulate the transformation matrix required to transform a square box with the given side length to the position of the QR code within the viewport
-  Matrix4? calculateTransformationMatrix(double sideLength, Size viewport) {
-    double xScale = viewport.width / imageSize.width;
-    double yScale = viewport.height / imageSize.height;
-    return setPolyToPoly(
-      [
-        const Offset(0, 0),
-        Offset(sideLength, 0),
-        Offset(sideLength, sideLength),
-        Offset(0, sideLength),
-      ],
-      cornerPoints
-          .map(
-            (e) => Offset(
-              (e.x.toDouble() - cornerPoints[0].x) * xScale,
-              (e.y.toDouble() - cornerPoints[0].y) * yScale,
-            ),
-          )
-          .toList(),
-    );
-  }
-
-  // calculate the position of the top left corner of the QR code within the viewport
-  Offset topLeft(Size viewport) {
-    double xScale = viewport.width / imageSize.width;
-    double yScale = viewport.height / imageSize.height;
-    return Offset(
-      cornerPoints[0].x.toDouble() * xScale,
-      cornerPoints[0].y.toDouble() * yScale,
-    );
   }
 }

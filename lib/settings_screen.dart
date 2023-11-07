@@ -67,8 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   max: 200,
                 ),
               ),
-              const InfoIcon(
-                  "The higher the sampling rate, the more frequently QR codes are searched for and the more frequently the position of the Game of Life is updated. However, this also requires more performance."),
+              const InfoIcon("The higher the sampling rate, the more frequently QR codes are searched for and the more frequently the position of the Game of Life is updated. However, this also requires more performance."),
             ],
           ),
           GestureDetector(
@@ -144,30 +143,29 @@ class InfoIcon extends StatefulWidget {
 }
 
 class _InfoIconState extends State<InfoIcon> {
+  final _controller = SuperTooltipController();
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: showTooltip,
-      child: const Icon(Icons.info),
-    );
-  }
-
-  void showTooltip() {
-    SuperTooltip(
-      arrowTipDistance: 12.0,
-      popupDirection: TooltipDirection.left,
-      backgroundColor: Theme.of(context).colorScheme.background,
-      showCloseButton: ShowCloseButton.inside,
-      closeButtonColor: Theme.of(context).colorScheme.onBackground,
-      content: Material(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 20.0),
-          child: Text(
-            widget.text,
-            softWrap: true,
+      onTap: _controller.showTooltip,
+      child: SuperTooltip(
+        controller: _controller,
+        arrowTipDistance: 12.0,
+        popupDirection: TooltipDirection.left,
+        backgroundColor: Theme.of(context).colorScheme.background,
+        showCloseButton: ShowCloseButton.inside,
+        closeButtonColor: Theme.of(context).colorScheme.onBackground,
+        content: Material(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 20.0),
+            child: Text(
+              widget.text,
+              softWrap: true,
+            ),
           ),
         ),
+        child: const Icon(Icons.info),
       ),
-    ).show(context);
+    );
   }
 }

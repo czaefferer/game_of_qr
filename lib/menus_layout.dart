@@ -5,8 +5,6 @@ You should have received a copy of the GNU General Public License along with Gam
 
 import 'package:flutter/material.dart';
 
-import 'package:game_of_qr/util.dart';
-
 class MenusLayout extends StatelessWidget {
   const MenusLayout({required this.children, super.key});
 
@@ -44,6 +42,20 @@ class MenusLayout extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<Widget> intersperse(List<Widget> widgets, Widget separator) {
+    if (widgets.isEmpty) {
+      return widgets;
+    }
+    List<Widget> result = [];
+    for (var i = 0; i < widgets.length; i++) {
+      if (i != 0) {
+        result.add(separator);
+      }
+      result.add(widgets[i]);
+    }
+    return result;
   }
 }
 

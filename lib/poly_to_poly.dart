@@ -3,65 +3,7 @@ Game-of-QR is free software: you can redistribute it and/or modify it under the 
 Game-of-QR is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with Game-of-QR. If not, see <https://www.gnu.org/licenses/>. */
 
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
-
-List<Widget> intersperse(List<Widget> widgets, Widget separator) {
-  if (widgets.isEmpty) {
-    return widgets;
-  }
-  List<Widget> result = [];
-  for (var i = 0; i < widgets.length; i++) {
-    if (i != 0) {
-      result.add(separator);
-    }
-    result.add(widgets[i]);
-  }
-  return result;
-}
-
-// convert CameraImage from camera to InputImage required by ML kit, see https://github.com/bharat-biradar/Google-Ml-Kit-plugin/tree/master/packages/google_mlkit_commons#creating-an-inputimage
-InputImage cameraImageToInputImage(CameraImage cameraImage, int sensorOrientation) {
-  final WriteBuffer bytesBuffer = WriteBuffer();
-  for (final Plane plane in cameraImage.planes) {
-    bytesBuffer.putUint8List(plane.bytes);
-  }
-  final bytes = bytesBuffer.done().buffer.asUint8List();
-
-  final size = Size(cameraImage.width.toDouble(), cameraImage.height.toDouble());
-
-  final imageRotation = InputImageRotationValue.fromRawValue(sensorOrientation);
-  if (imageRotation == null) {
-    throw Exception("could not get InputImageRotation");
-  }
-
-  final inputImageFormat = InputImageFormatValue.fromRawValue(cameraImage.format.raw as int);
-  if (inputImageFormat == null) {
-    throw Exception("could not get InputImageFormat");
-  }
-
-  final planeData = cameraImage.planes
-      .map(
-        (Plane plane) => InputImagePlaneMetadata(
-          bytesPerRow: plane.bytesPerRow,
-          height: plane.height,
-          width: plane.width,
-        ),
-      )
-      .toList();
-
-  return InputImage.fromBytes(
-    bytes: bytes,
-    inputImageData: InputImageData(
-      size: size,
-      imageRotation: imageRotation,
-      inputImageFormat: inputImageFormat,
-      planeData: planeData,
-    ),
-  );
-}
 
 // port of Skia's SkMatrix::setPolyToPoly method, see https://stackoverflow.com/a/74030319/441264
 Matrix4? setPolyToPoly(List<Offset> src, List<Offset> dst) {
@@ -83,6 +25,10 @@ Matrix4? setPolyToPoly(List<Offset> src, List<Offset> dst) {
 Matrix4? _poly4Proc(List<Offset> src) {
   double a1, a2;
   double x0, y0, x1, y1, x2, y2;
+
+  double _ieeeFloatDivide(double d0, double d1) => d0 / d1;
+
+  bool _checkForZero(double d) => d * d == 0;
 
   x0 = src[2].dx - src[0].dx;
   y0 = src[2].dy - src[0].dy;
@@ -140,7 +86,3 @@ Matrix4? _poly4Proc(List<Offset> src) {
     src[0].dx, src[0].dy, 0, 1, //
   );
 }
-
-double _ieeeFloatDivide(double d0, double d1) => d0 / d1;
-
-bool _checkForZero(double d) => d * d == 0;
