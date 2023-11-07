@@ -171,7 +171,7 @@ class QrDetection {
     if (rotation == null) return null;
 
     // get image format
-    final format = InputImageFormatValue.fromRawValue(image.format.raw as int); // TODO auf iOS testen, da kommt eine FourCharCode
+    final format = InputImageFormatValue.fromRawValue(image.format.raw as int);
     // validate format depending on platform
     // only supported formats:
     // * nv21 for Android
