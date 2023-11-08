@@ -10,6 +10,8 @@ import 'dart:developer';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 
+// TODO make to instance, reference in backend
+
 // split into abstract class and specific class for reusage of Settings class
 abstract class Settings {
   Future<String> get _appDataDirectory async {

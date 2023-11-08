@@ -8,7 +8,7 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
-import 'package:game_of_qr/settings_store.dart';
+import 'package:game_of_qr/settings/settings_store.dart';
 
 class GameOfLife extends StatefulWidget {
   const GameOfLife({

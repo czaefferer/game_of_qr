@@ -6,9 +6,9 @@ You should have received a copy of the GNU General Public License along with Gam
 import 'package:flutter/material.dart';
 import 'package:super_tooltip/super_tooltip.dart';
 
-import 'package:game_of_qr/header.dart';
-import 'package:game_of_qr/menus_layout.dart';
-import 'package:game_of_qr/settings_store.dart';
+import 'package:game_of_qr/menues/header.dart';
+import 'package:game_of_qr/menues/menus_layout.dart';
+import 'package:game_of_qr/settings/settings_store.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});

@@ -9,8 +9,8 @@ import 'dart:math' as math;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
-import 'package:game_of_qr/qr_information.dart';
-import 'package:game_of_qr/settings_store.dart';
+import 'package:game_of_qr/game/qr_information.dart';
+import 'package:game_of_qr/settings/settings_store.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 
 class QrDetection {

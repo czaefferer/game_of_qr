@@ -5,11 +5,12 @@ You should have received a copy of the GNU General Public License along with Gam
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:game_of_qr/app/game_of_qr_app.dart';
 
-import 'package:game_of_qr/main_menu.dart';
-import 'package:game_of_qr/settings_store.dart';
+import 'package:game_of_qr/settings/settings_store.dart';
 
 void main() async {
+  // TODO move to backend
   WidgetsFlutterBinding.ensureInitialized();
   await Future.wait([
     AppSettings.instance.loadInitialValues(),
@@ -19,32 +20,4 @@ void main() async {
     ]),
   ]);
   runApp(const GameOfQrApp());
-}
-
-class GameOfQrApp extends StatelessWidget {
-  const GameOfQrApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Game of QR',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSwatch(
-          primarySwatch: Colors.blueGrey,
-          cardColor: Colors.grey.shade400,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSwatch(
-          primarySwatch: Colors.blueGrey,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
-      home: const MainMenu(),
-    );
-  }
 }

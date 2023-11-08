@@ -5,7 +5,7 @@ You should have received a copy of the GNU General Public License along with Gam
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
-import 'package:game_of_qr/poly_to_poly.dart';
+import 'package:game_of_qr/game/poly_to_poly.dart';
 import 'package:qr/qr.dart';
 
 class QRInformation {

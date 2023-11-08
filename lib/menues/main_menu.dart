@@ -6,10 +6,10 @@ You should have received a copy of the GNU General Public License along with Gam
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'package:game_of_qr/header.dart';
-import 'package:game_of_qr/main_game.dart';
-import 'package:game_of_qr/menus_layout.dart';
-import 'package:game_of_qr/settings_screen.dart';
+import 'package:game_of_qr/menues/header.dart';
+import 'package:game_of_qr/game/main_game.dart';
+import 'package:game_of_qr/menues/menus_layout.dart';
+import 'package:game_of_qr/settings/settings_screen.dart';
 
 class MainMenu extends StatelessWidget {
   const MainMenu({super.key});

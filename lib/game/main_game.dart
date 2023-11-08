@@ -9,11 +9,11 @@ import 'dart:math' as math;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:game_of_qr/game_of_life.dart';
-import 'package:game_of_qr/header.dart';
-import 'package:game_of_qr/qr_detection.dart';
-import 'package:game_of_qr/qr_information.dart';
-import 'package:game_of_qr/settings_store.dart';
+import 'package:game_of_qr/game/game_of_life.dart';
+import 'package:game_of_qr/menues/header.dart';
+import 'package:game_of_qr/game/qr_detection.dart';
+import 'package:game_of_qr/game/qr_information.dart';
+import 'package:game_of_qr/settings/settings_store.dart';
 
 class MainGame extends StatefulWidget {
   const MainGame({super.key});
