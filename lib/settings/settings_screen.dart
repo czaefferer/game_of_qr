@@ -4,7 +4,7 @@ Game-of-QR is distributed in the hope that it will be useful, but WITHOUT ANY WA
 You should have received a copy of the GNU General Public License along with Game-of-QR. If not, see <https://www.gnu.org/licenses/>. */
 
 import 'package:flutter/material.dart';
-import 'package:game_of_qr/app/game_of_qr_backend.dart';
+import 'package:game_of_qr/app/backend.dart';
 import 'package:super_tooltip/super_tooltip.dart';
 
 import 'package:game_of_qr/menues/header.dart';

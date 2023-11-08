@@ -4,55 +4,58 @@ Game-of-QR is distributed in the hope that it will be useful, but WITHOUT ANY WA
 You should have received a copy of the GNU General Public License along with Game-of-QR. If not, see <https://www.gnu.org/licenses/>. */
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:game_of_qr/game/poly_to_poly.dart';
 import 'package:qr/qr.dart';
 
+@immutable
 class QRInformation {
-  List<math.Point<int>> cornerPoints;
-  DateTime lastUpdate = DateTime.now();
+  final DateTime lastUpdate = DateTime.now();
+  final List<math.Point<int>> cornerPoints;
   final Size imageSize;
   final String rawData;
   final int rawDataHash;
-  late final List<List<bool>> pixels;
-  late final int pixelsAxisCount;
+  final List<List<bool>> pixels;
+  final int pixelsAxisCount;
 
-  QRInformation(this.cornerPoints, this.rawData, this.imageSize) : rawDataHash = rawData.hashCode {
+  QRInformation({
+    required this.cornerPoints,
+    required this.imageSize,
+    required this.rawData,
+    required this.rawDataHash,
+    required this.pixels,
+    required this.pixelsAxisCount,
+  });
+
+  factory QRInformation.withCalculatedPixels(List<math.Point<int>> cornerPoints, String rawData, Size imageSize) {
     // recreate a QR code based on the content of the found QR code
     var qrImage = QrImage(QrCode.fromData(data: rawData, errorCorrectLevel: QrErrorCorrectLevel.Q));
     // and then read out the dimension and the pixels
-    pixelsAxisCount = qrImage.moduleCount;
-    pixels = List.generate(qrImage.moduleCount, (_) => List.generate(qrImage.moduleCount, (_) => false));
+    var pixelsAxisCount = qrImage.moduleCount;
+    var pixels = List.generate(qrImage.moduleCount, (_) => List.generate(qrImage.moduleCount, (_) => false));
     for (int x = 0; x < qrImage.moduleCount; x++) {
       for (int y = 0; y < qrImage.moduleCount; y++) {
         pixels[x][y] = qrImage.isDark(x, y);
       }
     }
-  }
-  void updateCornerPoints(List<math.Point<int>> cornerPoints) {
-    this.cornerPoints = cornerPoints;
-    lastUpdate = DateTime.now();
+    return QRInformation(
+      cornerPoints: cornerPoints,
+      imageSize: imageSize,
+      rawData: rawData,
+      rawDataHash: rawData.hashCode,
+      pixels: pixels,
+      pixelsAxisCount: pixelsAxisCount,
+    );
   }
 
-  // calulate the transformation matrix required to transform a square box with the given side length to the position of the QR code within the viewport
-  Matrix4? calculateTransformationMatrix(double sideLength, Size viewport) {
-    double xScale = viewport.width / imageSize.width;
-    double yScale = viewport.height / imageSize.height;
-    return setPolyToPoly(
-      [
-        const Offset(0, 0),
-        Offset(sideLength, 0),
-        Offset(sideLength, sideLength),
-        Offset(0, sideLength),
-      ],
-      cornerPoints
-          .map(
-            (e) => Offset(
-              (e.x.toDouble() - cornerPoints[0].x) * xScale,
-              (e.y.toDouble() - cornerPoints[0].y) * yScale,
-            ),
-          )
-          .toList(),
+  QRInformation withUpdatedCornerPoints(List<math.Point<int>> newCornerPoints) {
+    return QRInformation(
+      cornerPoints: newCornerPoints,
+      imageSize: imageSize,
+      rawData: rawData,
+      rawDataHash: rawDataHash,
+      pixels: pixels,
+      pixelsAxisCount: pixelsAxisCount,
     );
   }
 
@@ -66,4 +69,3 @@ class QRInformation {
     );
   }
 }
-

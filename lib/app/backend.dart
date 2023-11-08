@@ -4,27 +4,31 @@ Game-of-QR is distributed in the hope that it will be useful, but WITHOUT ANY WA
 You should have received a copy of the GNU General Public License along with Game-of-QR. If not, see <https://www.gnu.org/licenses/>. */
 
 import 'package:flutter/material.dart';
+import 'package:game_of_qr/game/qr/qr_information.dart';
 import 'package:game_of_qr/settings/settings.dart';
 
 class Backend {
   Backend._();
 
-  // Settings
   Settings? _settings;
   Settings get settings => _settings ?? (throw Exception("Settings not yet loaded"));
+
+  bool detectionPaused = false;
+
+  ValueNotifier<QRInformation?> _latestFoundQr = ValueNotifier(null);
+  ValueNotifier<QRInformation?> get latestFoundQrNotifier => _latestFoundQr;
+  QRInformation? get latestFoundQr => _latestFoundQr.value;
+  set latestFoundQr(QRInformation? value) => _latestFoundQr.value = value;
 
   Future<void> _initialize() async {
     _settings = await Settings.load();
   }
 
   static Future<Backend> initialize() async {
-    var backend = Backend._();
-    await backend._initialize();
-    return backend;
+    return Backend._().._initialize();
   }
 }
 
-@immutable
 class BackendInheritedWidget extends InheritedWidget {
   const BackendInheritedWidget({
     Key? key,

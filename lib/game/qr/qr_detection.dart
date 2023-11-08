@@ -8,20 +8,21 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:game_of_qr/game/qr_information.dart';
-import 'package:game_of_qr/settings/settings.dart';
+import 'package:game_of_qr/app/backend.dart';
+import 'package:game_of_qr/game/qr/qr_information.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 
-class QrDetection {
-  /// initialized
-  bool initialized = false;
+class QrDetection extends StatefulWidget {
+  const QrDetection({super.key});
 
-  /// paused
-  bool paused = false;
+  @override
+  State<QrDetection> createState() => _QrdetectionState();
+}
 
-  /// whether the parent widget is mounted
-  bool mounted = true;
+class _QrdetectionState extends State<QrDetection> {
+  Future<void>? initialization;
 
   /// camera used
   CameraDescription? camera;
@@ -38,18 +39,13 @@ class QrDetection {
   /// last time an image-analysis was completed
   DateTime lastAnalyzationCompleted = DateTime.now();
 
-  /// information about the last found QR code
-  QRInformation? latestFoundQr;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    initialization ??= asyncInitState();
+  }
 
-  /// callback when a new QR code has been found
-  void Function(QRInformation?)? updateQr;
-
-  /// settings
-  Settings? settings;
-
-  Future<void> initialize(void Function(QRInformation?) updateQr, Settings settings) async {
-    this.updateQr = updateQr;
-    this.settings = settings;
+  Future<void> asyncInitState() async {
     List<CameraDescription> cameras = await availableCameras();
     if (cameras.isEmpty) {
       throw Exception('No camera found');
@@ -70,26 +66,25 @@ class QrDetection {
         }
         await cameraController!.lockCaptureOrientation(DeviceOrientation.portraitUp);
         await cameraController!.startImageStream(analyzeImageFromStream);
-        initialized = true;
       });
   }
 
+  @override
   void dispose() {
-    mounted = false;
     if (cameraController != null) {
       cameraController!.dispose();
     }
     barcodeScanner.close();
+    super.dispose();
   }
 
-  // async so calls from the videostream can execute immediately instead of piling up and filling the RAM. A check inside will drop most frames.
+  // async so calls from the videostream can execute immediately in parallel instead of piling up and filling the RAM. A check inside will drop most frames.
   void analyzeImageFromStream(CameraImage image) async {
     // frame can be dropped if ...
     if (analyzingImage || // ... already analyzing an image
-            !initialized || // ... class has not been successfully initialized
-            !mounted || // ... parent is not mounted anymore
-            lastAnalyzationCompleted.add(Duration(milliseconds: settings!.delay)).isAfter(DateTime.now()) || // ... last analyzation completed less than configured delay ago
-            paused // ... detection is paused
+            !mounted || // ... widget is not mounted anymore
+            lastAnalyzationCompleted.add(Duration(milliseconds: settings.delay)).isAfter(DateTime.now()) || // ... last analyzation completed less than configured delay ago
+            backend.detectionPaused // ... detection is paused
         ) {
       return;
     }
@@ -97,34 +92,34 @@ class QrDetection {
     analyzingImage = true;
 
     try {
+      final QRInformation? latestFoundQr = backend.latestFoundQr;
+
       // convert CameraImage to InputImage and find all codes in the image
-      InputImage inputImageFromCameraImage = _inputImageFromCameraImage(image) ?? (throw Exception("could not convert image"));
+      final InputImage inputImageFromCameraImage = _inputImageFromCameraImage(image) ?? (throw Exception("could not convert image"));
       final List<Barcode> barcodes = await barcodeScanner.processImage(inputImageFromCameraImage);
 
       // check if a QR code was found
       if (barcodes.isEmpty || barcodes[0].cornerPoints.length != 4 || barcodes[0].rawValue == null) {
         // no valid QR code was found, check if one was previously found that is less than 1s old
-        if (latestFoundQr != null && latestFoundQr!.lastUpdate.add(const Duration(seconds: 1)).isAfter(DateTime.now())) {
+        if (latestFoundQr != null && latestFoundQr.lastUpdate.add(const Duration(seconds: 1)).isAfter(DateTime.now())) {
           // then keep it alive
           return;
         } else {
           // otherwise remove the old qr code
-          latestFoundQr = null;
-          updateQr!(null);
+          updateQr(null);
           return;
         }
       }
 
       // a QR code was found, check if it is the same as the previously found one
-      if (latestFoundQr != null && latestFoundQr!.rawDataHash == barcodes[0].rawValue.hashCode) {
+      if (latestFoundQr != null && latestFoundQr.rawDataHash == barcodes[0].rawValue.hashCode) {
         // then only update the position
-        latestFoundQr!.updateCornerPoints(barcodes[0].cornerPoints);
-        updateQr!(latestFoundQr);
+        updateQr(latestFoundQr.withUpdatedCornerPoints(barcodes[0].cornerPoints));
         return;
       }
 
       // the found QR code is a new one, create new QR code information
-      latestFoundQr = QRInformation(
+      updateQr(QRInformation.withCalculatedPixels(
         barcodes[0].cornerPoints,
         barcodes[0].rawValue!,
         // Android streams in landscape mode, iOS in portrait. Since camera is locked to portrait mode, assume the smaller value is width and the larger value is height
@@ -132,14 +127,20 @@ class QrDetection {
           math.min(image.width, image.height).toDouble(),
           math.max(image.width, image.height).toDouble(),
         ),
-      );
-      updateQr!(latestFoundQr);
-    } catch (e, s) {
-      log("error while analyzing image $e");
-      log(s.toString());
+      ));
+    } catch (error, stacktrace) {
+      log("error while analyzing image $error\n$stacktrace");
     } finally {
       analyzingImage = false;
       lastAnalyzationCompleted = DateTime.now();
+    }
+  }
+
+  void updateQr(QRInformation? qrInformation) {
+    if (!mounted) return;
+    backend.latestFoundQr = qrInformation;
+    if (!settings.arEnabled && qrInformation != null) {
+      backend.detectionPaused = true;
     }
   }
 
@@ -196,5 +197,27 @@ class QrDetection {
         bytesPerRow: plane.bytesPerRow, // used only in iOS
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+        future: initialization,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            log("error while initializing camera ${snapshot.error}\n${snapshot.stackTrace}");
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+
+          if (snapshot.connectionState != ConnectionState.done) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          return Positioned.fill(
+            child: CameraPreview(cameraController!),
+          );
+        });
   }
 }

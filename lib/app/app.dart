@@ -6,7 +6,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:game_of_qr/app/game_of_qr_backend.dart';
+import 'package:game_of_qr/app/backend.dart';
 import 'package:game_of_qr/menues/main_menu.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';

@@ -5,7 +5,7 @@ You should have received a copy of the GNU General Public License along with Gam
 
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:game_of_qr/app/game_of_qr_app.dart';
+import 'package:game_of_qr/app/app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

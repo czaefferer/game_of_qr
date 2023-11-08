@@ -5,6 +5,7 @@ You should have received a copy of the GNU General Public License along with Gam
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:game_of_qr/app/backend.dart';
 
 import 'package:game_of_qr/menues/header.dart';
 import 'package:game_of_qr/game/main_game.dart';
@@ -26,7 +27,11 @@ class MainMenu extends StatelessWidget {
           children: [
             WoodenButton(
               title: "Start",
-              openPage: () => const MainGame(),
+              openPage: () {
+                context.backend.detectionPaused = false;
+                context.backend.latestFoundQr = null;
+                return const MainGame();
+              },
             ),
             WoodenButton(
               title: "Settings",
