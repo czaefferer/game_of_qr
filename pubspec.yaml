@@ -17,6 +17,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   flutter:
     sdk: flutter
+  flutter_phoenix: ^1.1.1
   google_mlkit_barcode_scanning: ^0.10.0
   path_provider: ^2.1.1
   qr: ^3.0.1

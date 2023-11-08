@@ -7,3 +7,5 @@ linter:
 analyzer:
   errors:
     unused_field: warning
+    dead_code: warning
+    unused_import: warning

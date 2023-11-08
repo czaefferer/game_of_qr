@@ -10,7 +10,7 @@ import 'dart:math' as math;
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
 import 'package:game_of_qr/game/qr_information.dart';
-import 'package:game_of_qr/settings/settings_store.dart';
+import 'package:game_of_qr/settings/settings.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 
 class QrDetection {
@@ -44,8 +44,12 @@ class QrDetection {
   /// callback when a new QR code has been found
   void Function(QRInformation?)? updateQr;
 
-  Future<void> initialize(void Function(QRInformation?) updateQr) async {
+  /// settings
+  Settings? settings;
+
+  Future<void> initialize(void Function(QRInformation?) updateQr, Settings settings) async {
     this.updateQr = updateQr;
+    this.settings = settings;
     List<CameraDescription> cameras = await availableCameras();
     if (cameras.isEmpty) {
       throw Exception('No camera found');
@@ -53,7 +57,7 @@ class QrDetection {
     camera = cameras[0];
     cameraController = CameraController(
       camera!,
-      AppSettings.resolution,
+      settings.resolution,
       enableAudio: false,
       imageFormatGroup: Platform.isAndroid
           ? ImageFormatGroup.nv21
@@ -84,7 +88,7 @@ class QrDetection {
     if (analyzingImage || // ... already analyzing an image
             !initialized || // ... class has not been successfully initialized
             !mounted || // ... parent is not mounted anymore
-            lastAnalyzationCompleted.add(Duration(milliseconds: AppSettings.delay)).isAfter(DateTime.now()) || // ... last analyzation completed less than configured delay ago
+            lastAnalyzationCompleted.add(Duration(milliseconds: settings!.delay)).isAfter(DateTime.now()) || // ... last analyzation completed less than configured delay ago
             paused // ... detection is paused
         ) {
       return;

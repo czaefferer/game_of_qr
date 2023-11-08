@@ -7,8 +7,7 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-
-import 'package:game_of_qr/settings/settings_store.dart';
+import 'package:game_of_qr/app/game_of_qr_backend.dart';
 
 class GameOfLife extends StatefulWidget {
   const GameOfLife({
@@ -32,7 +31,7 @@ class _GameOfLifeState extends State<GameOfLife> {
   void initState() {
     super.initState();
     pixels = widget.initialPixels;
-    nextAdvanceGameTimer = Timer(Duration(milliseconds: AppSettings.gameSpeed), advanceGame);
+    nextAdvanceGameTimer = Timer(Duration(milliseconds: settings.gameSpeed), advanceGame);
   }
 
   @override
@@ -69,20 +68,11 @@ class _GameOfLifeState extends State<GameOfLife> {
     }
 
     // schedule next execution
-    nextAdvanceGameTimer = Timer(Duration(milliseconds: AppSettings.gameSpeed), advanceGame);
+    nextAdvanceGameTimer = Timer(Duration(milliseconds: settings.gameSpeed), advanceGame);
   }
 
   int getLivingNeightborsCount(int x, int y) {
-    return [
-      isCellAlive(x - 1, y - 1),
-      isCellAlive(x, y - 1),
-      isCellAlive(x + 1, y - 1),
-      isCellAlive(x - 1, y),
-      isCellAlive(x + 1, y),
-      isCellAlive(x - 1, y + 1),
-      isCellAlive(x, y + 1),
-      isCellAlive(x + 1, y + 1)
-    ].where((e) => e).length;
+    return [isCellAlive(x - 1, y - 1), isCellAlive(x, y - 1), isCellAlive(x + 1, y - 1), isCellAlive(x - 1, y), isCellAlive(x + 1, y), isCellAlive(x - 1, y + 1), isCellAlive(x, y + 1), isCellAlive(x + 1, y + 1)].where((e) => e).length;
   }
 
   bool isCellAlive(int x, int y) {

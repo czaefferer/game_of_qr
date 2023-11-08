@@ -9,11 +9,11 @@ import 'dart:math' as math;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:game_of_qr/app/game_of_qr_backend.dart';
 import 'package:game_of_qr/game/game_of_life.dart';
-import 'package:game_of_qr/menues/header.dart';
 import 'package:game_of_qr/game/qr_detection.dart';
 import 'package:game_of_qr/game/qr_information.dart';
-import 'package:game_of_qr/settings/settings_store.dart';
+import 'package:game_of_qr/menues/header.dart';
 
 class MainGame extends StatefulWidget {
   const MainGame({super.key});
@@ -38,7 +38,7 @@ class _MainGameState extends State<MainGame> {
   @override
   void initState() {
     super.initState();
-    initialization = qrDetection.initialize(updateQr);
+    initialization = qrDetection.initialize(updateQr, settings);
   }
 
   @override
@@ -55,7 +55,7 @@ class _MainGameState extends State<MainGame> {
   }
 
   void updateQr(QRInformation? nextQr) {
-    if (!AppSettings.arEnabled && nextQr != null) {
+    if (!settings.arEnabled && nextQr != null) {
       qrDetection.paused = true;
     }
     if (!mounted) return;
@@ -87,11 +87,11 @@ class _MainGameState extends State<MainGame> {
               double qrOverlayEdgeLength = //
                   foundQr == null //
                       ? 0
-                      : AppSettings.arEnabled //
+                      : settings.arEnabled //
                           ? foundQr.pixelsAxisCount.toDouble() // minimum, will get stretched to the size of the QR code in the CameraPreview
                           : getCenteredCodeEdgeLength(constraints.maxWidth, foundQr.pixelsAxisCount);
               Matrix4? transformationMatrix = //
-                  foundQr != null && AppSettings.arEnabled //
+                  foundQr != null && settings.arEnabled //
                       ? foundQr.calculateTransformationMatrix(qrOverlayEdgeLength, viewport)
                       : null;
               return Stack(
@@ -101,7 +101,7 @@ class _MainGameState extends State<MainGame> {
                     child: CameraPreview(qrDetection.cameraController!),
                   ),
                   // AR mode overlay
-                  if (foundQr != null && AppSettings.arEnabled && transformationMatrix != null)
+                  if (foundQr != null && settings.arEnabled && transformationMatrix != null)
                     Positioned(
                       left: foundQr.topLeft(viewport).dx,
                       top: foundQr.topLeft(viewport).dy,

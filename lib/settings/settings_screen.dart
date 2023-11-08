@@ -4,11 +4,12 @@ Game-of-QR is distributed in the hope that it will be useful, but WITHOUT ANY WA
 You should have received a copy of the GNU General Public License along with Game-of-QR. If not, see <https://www.gnu.org/licenses/>. */
 
 import 'package:flutter/material.dart';
+import 'package:game_of_qr/app/game_of_qr_backend.dart';
 import 'package:super_tooltip/super_tooltip.dart';
 
 import 'package:game_of_qr/menues/header.dart';
 import 'package:game_of_qr/menues/menus_layout.dart';
-import 'package:game_of_qr/settings/settings_store.dart';
+import 'package:game_of_qr/settings/settings.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -38,10 +39,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Slider(
                   onChanged: (value) {
                     setState(() {
-                      AppSettings.resolution = AppSettings.intToResolutionPreset(value.round());
+                      settings.resolution = Settings.intToResolutionPreset(value.round());
                     });
                   },
-                  value: AppSettings.resolutionPresetToInt(AppSettings.resolution).toDouble(),
+                  value: Settings.resolutionPresetToInt(settings.resolution).toDouble(),
                   min: 1,
                   max: 6,
                   divisions: 5,
@@ -59,10 +60,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Slider(
                   onChanged: (value) {
                     setState(() {
-                      AppSettings.delay = 200 - value.round();
+                      settings.delay = 200 - value.round();
                     });
                   },
-                  value: 200.0 - AppSettings.delay,
+                  value: 200.0 - settings.delay,
                   min: 0,
                   max: 200,
                 ),
@@ -73,7 +74,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           GestureDetector(
             onTap: () {
               setState(() {
-                AppSettings.arEnabled = !AppSettings.arEnabled;
+                settings.arEnabled = !settings.arEnabled;
               });
             },
             child: Row(
@@ -85,10 +86,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Switch(
                     onChanged: (_) {
                       setState(() {
-                        AppSettings.arEnabled = !AppSettings.arEnabled;
+                        settings.arEnabled = !settings.arEnabled;
                       });
                     },
-                    value: AppSettings.arEnabled,
+                    value: settings.arEnabled,
                   ),
                 ),
                 const InfoIcon("If activated, the Game of Life is displayed above the QR code found, otherwise it will be shown centered. Disabling AR can improve performance."),
@@ -104,10 +105,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Slider(
                   onChanged: (value) {
                     setState(() {
-                      AppSettings.gameSpeed = 1000 - value.round();
+                      settings.gameSpeed = 1000 - value.round();
                     });
                   },
-                  value: 1000 - AppSettings.gameSpeed.toDouble(),
+                  value: 1000 - settings.gameSpeed.toDouble(),
                   min: 0,
                   max: 1000,
                 ),
@@ -119,7 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: "Reset to default",
             action: () {
               setState(() {
-                AppSettings.reset();
+                settings.reset();
               });
             },
           ),
