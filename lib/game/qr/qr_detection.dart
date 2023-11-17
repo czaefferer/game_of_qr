@@ -60,13 +60,13 @@ class _QrdetectionState extends State<QrDetection> {
           : Platform.isIOS
               ? ImageFormatGroup.bgra8888
               : throw Exception("unsupported platform"),
-    )..initialize().then((_) async {
-        if (!mounted) {
-          return;
-        }
-        await cameraController!.lockCaptureOrientation(DeviceOrientation.portraitUp);
-        await cameraController!.startImageStream(analyzeImageFromStream);
-      });
+    );
+    await cameraController!.initialize();
+    if (!mounted) {
+      return;
+    }
+    await cameraController!.lockCaptureOrientation(DeviceOrientation.portraitUp);
+    await cameraController!.startImageStream(analyzeImageFromStream);
   }
 
   @override
